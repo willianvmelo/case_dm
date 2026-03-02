@@ -7,6 +7,11 @@ class TransactionKind(str, Enum):
     debit = "debit"
 
 
+class TransactionStatus(str, Enum):
+    pending = "PENDING"
+    sent = "SENT"
+
+
 class TransactionRequest(BaseModel):
     external_id: str = Field(..., min_length=1)
     valor: float = Field(..., gt=0)
@@ -16,3 +21,4 @@ class TransactionRequest(BaseModel):
 class TransactionResponse(BaseModel):
     transaction_id: int
     partner_transaction_id: int | None = None
+    status: TransactionStatus

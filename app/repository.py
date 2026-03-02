@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from app.models import TransactionKind
+from app.models import TransactionKind, TransactionStatus
 
 
 @dataclass
@@ -11,6 +11,9 @@ class TransactionRecord:
     valor: float
     kind: TransactionKind
     partner_transaction_id: Optional[int] = None
+    status: TransactionStatus = TransactionStatus.pending
+    attempts: int = 0
+    last_error: Optional[str] = None
 
 
 class InMemoryTransactionRepository:
@@ -32,6 +35,17 @@ class InMemoryTransactionRepository:
         self._by_external_id[external_id] = rec
         return rec
 
-    def set_partner_id(self, external_id: str, partner_transaction_id: int) -> None:
+    def set_partner_sent(self, external_id: str, partner_transaction_id: int) -> None:
         rec = self._by_external_id[external_id]
         rec.partner_transaction_id = partner_transaction_id
+        rec.status = TransactionStatus.sent
+        rec.last_error = None
+
+    def mark_pending_error(self, external_id: str, error: str) -> None:
+        rec = self._by_external_id[external_id]
+        rec.status = TransactionStatus.pending
+        rec.attempts += 1
+        rec.last_error = error
+
+    def list_pending(self) -> list[TransactionRecord]:
+        return [r for r in self._by_external_id.values() if r.status == TransactionStatus.pending]

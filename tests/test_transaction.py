@@ -23,3 +23,13 @@ def test_validation_valor_must_be_positive():
     client = TestClient(app)
     resp = client.post("/transaction", json={"external_id": "ext-3", "valor": 0, "kind": "credit"})
     assert resp.status_code == 422
+
+def test_returns_202_when_partner_unavailable(monkeypatch):
+    from fastapi.testclient import TestClient
+    from app.main import app, partner
+
+    partner.should_fail = True
+    client = TestClient(app)
+    resp = client.post("/transaction", json={"external_id": "ext-202", "valor": 10, "kind": "credit"})
+    assert resp.status_code == 202
+    assert resp.json()["status"] == "PENDING"    
