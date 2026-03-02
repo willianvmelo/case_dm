@@ -14,9 +14,11 @@ logging.basicConfig(level=logging.INFO)
 
 db_path = os.getenv("DB_PATH", "app.db")
 repo = SqliteTransactionRepository(db_path=db_path)
-partner = PartnerClient()
-service = TransactionService(repo, partner)
 
+partner_url = os.getenv("PARTNER_URL", "http://localhost:9000")
+partner = PartnerClient(base_url=partner_url)
+
+service = TransactionService(repo, partner)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
