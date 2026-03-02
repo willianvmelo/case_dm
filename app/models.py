@@ -10,6 +10,7 @@ class TransactionKind(str, Enum):
 class TransactionStatus(str, Enum):
     pending = "PENDING"
     sent = "SENT"
+    failed = "FAILED"
 
 
 class TransactionRequest(BaseModel):

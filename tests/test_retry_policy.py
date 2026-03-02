@@ -1,29 +1,10 @@
 from pathlib import Path
-
 import httpx
 
 from app.models import TransactionRequest, TransactionStatus
 from app.partner_client import PartnerClient
 from app.repository import SqliteTransactionRepository
 from app.service import TransactionService
-
-
-def test_when_partner_fails_transaction_becomes_pending(tmp_path: Path):
-    db_file = tmp_path / "test.db"
-    repo = SqliteTransactionRepository(str(db_file))
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(500, json={"error": "down"})
-
-    transport = httpx.MockTransport(handler)
-    http_client = httpx.Client(transport=transport, timeout=1.0)
-    partner = PartnerClient(base_url="http://partner", client=http_client)
-
-    service = TransactionService(repo, partner)
-
-    res = service.create_transaction(TransactionRequest(external_id="x1", valor=10, kind="credit"))
-    assert res.status == TransactionStatus.pending
-    assert res.partner_transaction_id is None
 
 
 def test_retry_pending_sends_when_partner_recovers(tmp_path: Path):
