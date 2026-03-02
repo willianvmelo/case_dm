@@ -1,9 +1,12 @@
 import os
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response, status, HTTPException
+
+from app.context import request_id_ctx
+from app.logging_utils import setup_logging
+from app.middleware import RequestIdMiddleware
 
 from app.partner_client import PartnerClient
 from app.repository import SqliteTransactionRepository
@@ -16,8 +19,15 @@ from app.models import (
 )
 
 
-logging.basicConfig(level=logging.INFO)
+def get_request_id() -> str | None:
+    return request_id_ctx.get()
 
+
+# Logging (configure once on import)
+setup_logging(get_request_id)
+
+
+# Dependencies / singletons
 db_path = os.getenv("DB_PATH", "app.db")
 repo = SqliteTransactionRepository(db_path=db_path)
 
@@ -25,6 +35,7 @@ partner_url = os.getenv("PARTNER_URL", "http://localhost:9000")
 partner = PartnerClient(base_url=partner_url)
 
 service = TransactionService(repo, partner)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,14 +45,19 @@ async def lifespan(app: FastAPI):
             await asyncio.sleep(2)
 
     task = asyncio.create_task(retry_loop())
-    yield
-    task.cancel()
+    try:
+        yield
+    finally:
+        task.cancel()
 
 
 app = FastAPI(
     title="Transactions API",
     lifespan=lifespan,
 )
+
+# Middleware
+app.add_middleware(RequestIdMiddleware)
 
 
 @app.get("/health")
@@ -55,6 +71,7 @@ async def create_transaction(payload: TransactionRequest, response: Response):
     if result.status == TransactionStatus.pending:
         response.status_code = status.HTTP_202_ACCEPTED
     return result
+
 
 @app.get("/transaction/{external_id}", response_model=TransactionStatusResponse)
 async def get_transaction_status(external_id: str):
