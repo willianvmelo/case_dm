@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 from contextlib import asynccontextmanager
@@ -6,13 +7,13 @@ from fastapi import FastAPI, Response, status
 
 from app.models import TransactionRequest, TransactionResponse, TransactionStatus
 from app.partner_client import PartnerClient
-from app.repository import InMemoryTransactionRepository
+from app.repository import SqliteTransactionRepository
 from app.service import TransactionService
 
 logging.basicConfig(level=logging.INFO)
 
-
-repo = InMemoryTransactionRepository()
+db_path = os.getenv("DB_PATH", "app.db")
+repo = SqliteTransactionRepository(db_path=db_path)
 partner = PartnerClient()
 service = TransactionService(repo, partner)
 

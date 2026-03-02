@@ -2,13 +2,13 @@ import logging
 
 from app.models import TransactionRequest, TransactionResponse, TransactionStatus
 from app.partner_client import PartnerClient, PartnerUnavailable
-from app.repository import InMemoryTransactionRepository
+from app.repository import SqliteTransactionRepository
 
 logger = logging.getLogger("transactions")
 
 
 class TransactionService:
-    def __init__(self, repo: InMemoryTransactionRepository, partner: PartnerClient) -> None:
+    def __init__(self, repo: SqliteTransactionRepository, partner: PartnerClient) -> None:
         self.repo = repo
         self.partner = partner
 
