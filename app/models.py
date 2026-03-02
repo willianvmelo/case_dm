@@ -22,3 +22,14 @@ class TransactionResponse(BaseModel):
     transaction_id: int
     partner_transaction_id: int | None = None
     status: TransactionStatus
+
+
+class TransactionStatusResponse(BaseModel):
+    transaction_id: int
+    external_id: str
+    valor: float
+    kind: TransactionKind
+    partner_transaction_id: int | None = None
+    status: TransactionStatus
+    attempts: int
+    last_error: str | None = None
